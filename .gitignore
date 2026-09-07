@@ -67,3 +67,87 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# ==========================================
+# JetBrains Rider
+# ==========================================
+.idea/
+*.sln.iml
+
+# ==========================================
+# Visual Studio
+# ==========================================
+.vs/
+*.user
+*.suo
+*.db
+*.ipch
+*.sdf
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+
+# ==========================================
+# Build Outputs & Directories
+# ==========================================
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+Generated\ Files/
+
+# ==========================================
+# MSVC / C++ Intermediate Files
+# ==========================================
+*.obj
+*.o
+*.ilk
+*.meta
+*.pch
+*.pdb
+*.idb
+*.tlog
+*.lastbuildstate
+*.iobj
+*.ipdb
+*.res
+*.aps
+*.sbr
+*.bsc
+
+# ==========================================
+# Executables and Binaries
+# ==========================================
+*.exe
+*.appx
+*.msix
+
+# NOTE: Since you have a custom DLL, ignoring ALL .dll and .lib files by default 
+# might accidentally ignore the custom ones you want to commit. 
+# If your custom .dll/.lib files are stored in a specific folder (e.g., "Dependencies/" or "Libs/"), 
+# you should uncomment the two lines below and add an exception for your folder:
+
+# *.dll
+# *.lib
+# !Dependencies/**/*.dll
+# !Dependencies/**/*.lib
+
+# ==========================================
+# DirectX / Shaders
+# ==========================================
+# Ignore Compiled Shader Objects (these are built from your .hlsl files)
+*.cso
+
+# ==========================================
+# OS Generated Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
