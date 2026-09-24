@@ -3,6 +3,10 @@
 #include "d3dUtil.h"
 
 
+// [UploadBuffer]
+// テクスチャや3DモデルのデータをGPUに転送するためのバッファ．
+// 対応するGPUバッファと同一のサイズのUploadバッファをシステムメモリ上に確保し，CopyBufferRegionによってコピーする．
+// システムメモリ(RAM) -> Upload buffer -> gpu buffer がフローのイメージ．
 template<typename T>
 class UploadBuffer
 {
@@ -28,6 +32,7 @@ public:
             )
         );
 
+        // UploadBuffer内の指定された**CPUポインター**を取得する．
         mUploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mMappedData));
     }
 

@@ -1,6 +1,7 @@
 ﻿#include "../Common/d3dApp.h"
 #include "../Common/MathHelper.h"
 #include "../Common/d3dUtil.h"
+#include "../Common/UploadBuffer.h"
 
 
 using Microsoft::WRL::ComPtr;
@@ -49,6 +50,8 @@ private:
 
     ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
     ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
+
+    std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
     std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
 
     ComPtr<ID3DBlob> mbsByteCode = nullptr;
@@ -131,12 +134,40 @@ void BoxApp::BuildDescriptorHeaps()
     cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     cbvHeapDesc.NodeMask = 0;
+    // SHADER_VISIBLEフラグを付けることで，GPUからアクセス可能なヒープになる．
     ThrowIfFailed(
         md3dDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&mCbvHeap))
     );
 }
 
+// [BuildConstantBuffers()]
+// UploadBuffer をシステムメモリ上にアロケートする．
+// GPU Virtual Address を取得し，Constant Buffer View を heap に書き込む．
+// GPUはレンダリング中に CBV を参照してデータを読み込む．
 void BoxApp::BuildConstantBuffers()
 {
+    // [make_unique] スマートポインタを作る．new/delete 無しに安全にメモリ確保を行える．
     mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), 1, true);
+
+    UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+    
+    D3D12_GPU_VIRTUAL_ADDRESS cbAddress = mObjectCB->Resource()->GetGPUVirtualAddress();
+
+    int boxCBufIndex = 0;
+    cbAddress += boxCBufIndex * objCBByteSize;
+
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+    cbvDesc.BufferLocation = cbAddress;
+    cbvDesc.SizeInBytes = objCBByteSize;
+    
+    md3dDevice->CreateConstantBufferView(
+        &cbvDesc, mCbvHeap->GetCPUDescriptorHandleForHeapStart()
+    );
+    
+}
+
+void BoxApp::BuildRootSignature()
+{
+    
+    return;
 }
