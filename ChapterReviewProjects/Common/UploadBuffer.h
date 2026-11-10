@@ -4,16 +4,25 @@
 
 
 // [UploadBuffer]
-// テクスチャや3DモデルのデータをGPUに転送するためのバッファ．
+// テクスチャや3DモデルのデータをGPUに転送するためのバッファ，のラッパークラス．
 // 対応するGPUバッファと同一のサイズのUploadバッファをシステムメモリ上に確保し，CopyBufferRegionによってコピーする．
 // システムメモリ(RAM) -> Upload buffer -> gpu buffer がフローのイメージ．
 template<typename T>
 class UploadBuffer
 {
+
+private:
+    Microsoft::WRL::ComPtr<ID3D12Resource> mUploadBuffer;
+    BYTE* mMappedData = nullptr;
+
+    UINT mElementByteSize = 0;
+    bool mIsConstantBuffer = false;
+    
 public:
     UploadBuffer(ID3D12Device* device, UINT elementCount, bool isConstantBuffer)
         : mIsConstantBuffer(isConstantBuffer)
     {
+        
         mElementByteSize = sizeof(T);
 
         // ConstantBufferの中身は256バイトの倍数である必要がある．
@@ -38,6 +47,7 @@ public:
 
     UploadBuffer(const UploadBuffer& rhs) = delete;
     UploadBuffer& operator=(const UploadBuffer& rhs) = delete;
+    
     ~UploadBuffer()
     {
         if (mUploadBuffer != nullptr)
@@ -55,11 +65,4 @@ public:
     {
         memcpy(&mMappedData[elementIndex * mElementByteSize], &data, mElementByteSize);
     }
-
-private:
-    Microsoft::WRL::ComPtr<ID3D12Resource> mUploadBuffer;
-    BYTE* mMappedData = nullptr;
-
-    UINT mElementByteSize = 0;
-    bool mIsConstantBuffer = false;
 };

@@ -124,7 +124,7 @@ bool BoxApp::Initialize()
 
 
 // [BuildDescriptorHeaps()]
-// CBV のための DescriptorHeap を作成する．
+// CBV のための DescriptorHeap (mCbvHeap) を作成する．
 // d3dApp.cpp の CreateRtvAndDsvDescriptorHeaps() と同様．
 // 復習：リソースはGPU上データ，デスクリプタ(ビュー)は場所/サイズ/用途を示すメタデータ．ヒープはその集合．
 void BoxApp::BuildDescriptorHeaps()
@@ -142,7 +142,7 @@ void BoxApp::BuildDescriptorHeaps()
 
 // [BuildConstantBuffers()]
 // UploadBuffer をシステムメモリ上にアロケートする．
-// GPU Virtual Address を取得し，Constant Buffer View を heap に書き込む．
+// GPU Virtual Address を取得し，Constant Buffer View を heap (mCbvHeap) に書き込む．
 // GPUはレンダリング中に CBV を参照してデータを読み込む．
 void BoxApp::BuildConstantBuffers()
 {
@@ -166,8 +166,42 @@ void BoxApp::BuildConstantBuffers()
     
 }
 
+// [BuildRootSignature()]
+// ルートシグネチャを作成する．
+// シェーダを関数とすると，Root Signature は関数の引数の型を定義するもの．
+// これにより，シェーダは必要な GPU 上のリソースを都度探さなくて済む．
+// 3種類に大別できる: root constants, root descriptor and descriptor table.
+// ここでは table を per-object の cbuffer に使っている． 
 void BoxApp::BuildRootSignature()
 {
+    
+    CD3DX12_ROOT_PARAMETER slotRootParameter[1];
+    
+    CD3DX12_DESCRIPTOR_RANGE cbvTable;
+    cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+    slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable);
+
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr, 
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+    ComPtr<ID3DBlob> serializedRootSig = nullptr;
+    ComPtr<ID3DBlob> errorBlob = nullptr;
+    
+    HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+        serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+
+    if(errorBlob != nullptr)
+    {
+        ::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+    }
+    ThrowIfFailed(hr);
+
+    
+    ThrowIfFailed(md3dDevice->CreateRootSignature(
+            0,
+            serializedRootSig->GetBufferPointer(),
+            serializedRootSig->GetBufferSize(),
+            IID_PPV_ARGS(&mRootSignature)));
     
     return;
 }
