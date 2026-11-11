@@ -77,9 +77,10 @@ struct SubmeshGeometry
 // [meshGeometry]
 struct MeshGeometry
 {
+	
 	std::string Name;
 
-	// システムメモリのコピー???．Blobを使う． vertex/index バッファはジェネリックになるため．
+	// システムメモリのコピー?．Blobを使う． vertex/index バッファはジェネリックになるため．
 	// 正しい型を指定するのは利用者の責任．
 	Microsoft::WRL::ComPtr<ID3DBlob> VertexBufferCPU = nullptr;
 	Microsoft::WRL::ComPtr<ID3DBlob> IndexBufferCPU = nullptr;
