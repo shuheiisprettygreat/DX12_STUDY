@@ -206,7 +206,9 @@ void BoxApp::BuildRootSignature()
     return;
 }
 
-
+// [BuildBoxGeometry()]
+// カスタム Vertex 構造体を頂点情報に持つ Box のジオメトリを作成する．
+// 
 void BoxApp::BuildBoxGeometry()
 {
     
@@ -250,12 +252,14 @@ void BoxApp::BuildBoxGeometry()
     mBoxGeo = std::make_unique<MeshGeometry>();
     mBoxGeo->Name = "boxGeo";
 
+    // CPU 上にバッファを作成，データをコピー
     ThrowIfFailed(D3DCreateBlob(vbByteSize, &mBoxGeo->VertexBufferCPU));
     CopyMemory(mBoxGeo->VertexBufferCPU->GetBufferPointer(), vertices,data(), vbByteSize);
 
     ThrowIfFailed(D3DCreateBlob(ibByteSize, &mBoxGeo->IndexBufferCPU));
     CopyMemory(mBoxGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
+    // それとは別にGPUバッファを作成する．アップロードバッファもセットで．
     mBoxGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(
         md3dDevice.Get(),
         mCommandList.Get(),
