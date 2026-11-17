@@ -64,4 +64,29 @@ Microsoft::WRL::ComPtr<ID3D12Resource> d3dUtil::CreateDefaultBuffer(ID3D12Device
 	
 }
 
+ComPtr<ID3DBlob> d3dUtil::CompileShader(const std::wstring& filename, const D3D_SHADER_MACRO* defines, const std::string& entrypoint, const std::string& target)
+{
+	UINT compileFlags = 0;
+#if deined(DEBUG) || defined(_DEBUG)
+	compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+	HRESULT hr = S_OK;
+	
+	ComPtr<ID3DBlob> byteCode = nullptr;
+	ComPtr<ID3DBlob> erroes;
+	
+	hr = D3DCompileFromFile(filename.c_str(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		entrypoint.c_str(), target.c_str(), compileFlags, 0, &byteCode, &erroes);
+
+	if(erroes != nullptr)
+	{
+		OutputDebugStringA((char*)erroes->GetBufferPointer());
+	}
+
+	ThrowIfFailed(hr);
+
+	return byteCode;
+}
+
 

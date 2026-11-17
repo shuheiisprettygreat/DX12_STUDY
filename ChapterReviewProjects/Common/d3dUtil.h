@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <wrl.h> 
 #include <string>
+#include <array>
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <D3DCompiler.h>
@@ -33,7 +34,6 @@ inline std::wstring AnsiToWString(const std::string& str)
 class d3dUtil {
 	
 public:
-	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, const void* initData, UINT64 byteSize, Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer);
 
 	static UINT CalcConstantBufferByteSize(UINT byteSize)
 	{
@@ -41,6 +41,21 @@ public:
 		// 255を足して，下位2バイト(<256領域)をマスクして最も近い256の倍数に切り上げる．
 		return (byteSize + 255) & ~255;
 	}
+	
+	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(
+		ID3D12Device* device,
+		ID3D12GraphicsCommandList* cmdList,
+		const void* initData,
+		UINT64 byteSize,
+		Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer
+	);
+
+	static Microsoft::WRL::ComPtr<ID3DBlob> CompileShader(
+		const std::wstring& filename,
+		const D3D_SHADER_MACRO* defines,
+		const std::string& entrypoint,
+		const std::string& target
+	);
 
 };
 

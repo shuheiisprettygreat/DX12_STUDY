@@ -84,11 +84,11 @@ protected:
 	bool      mResizing = false;   // are the resize bars being dragged?
     bool      mFullscreenState = false;// fullscreen enabled
 
-	// Set true to use 4X MSAA (ß4.1.8).  The default is false.
+	// Set true to use 4X MSAA (ÔΩß4.1.8).  The default is false.
     bool      m4xMsaaState = false;    // 4X MSAA enabled
     UINT      m4xMsaaQuality = 0;      // quality level of 4X MSAA
 
-	// Used to keep track of the ìdelta-timeÅEand game time (ß4.4).
+	// Used to keep track of the Èõªelta-time„Éªand game time (ÔΩß4.4).
 	GameTimer mTimer;
 	
     Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
