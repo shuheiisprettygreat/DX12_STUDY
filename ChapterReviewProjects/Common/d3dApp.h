@@ -22,6 +22,7 @@ public:
 	static D3DApp* GetApp();
 
 	HINSTANCE AppInst() const;
+	float AspectRatio() const;
 
 	bool Get4xMsaaState()const;
 	void Set4xMsaaState(bool value);

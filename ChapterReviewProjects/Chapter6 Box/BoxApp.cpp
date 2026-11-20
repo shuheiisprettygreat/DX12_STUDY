@@ -119,7 +119,26 @@ bool BoxApp::Initialize()
     BuildShadersAndInputLayout();
     BuildBoxGeometry();
     BuildPSO();
+
+    ThrowIfFailed(mCommandList->Close());
+    ID3D12CommandList* commandLists[] = { mCommandList.Get() };
+    mCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+
+    FlushCommandQueue();
     
+    return true;
+}
+
+void BoxApp::OnResize()
+{
+    D3DApp::OnResize();
+
+    XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
+    XMStoreFloat4x4(&mProj, P);
+}
+
+void BoxApp::Update(const GameTimer& gt)
+{
 }
 
 

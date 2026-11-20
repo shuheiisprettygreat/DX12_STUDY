@@ -23,6 +23,11 @@ HINSTANCE D3DApp::AppInst() const
 	return mhAppInst;
 }
 
+float D3DApp::AspectRatio() const
+{
+	return static_cast<float>(mClientWidth) / mClientHeight;
+}
+
 D3DApp::D3DApp(HINSTANCE hInstance)
 : mhAppInst(hInstance)
 {
@@ -582,22 +587,24 @@ void D3DApp::CreateRtvAndDsvDescriptorHeaps()
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&dsvHeapDsc, IID_PPV_ARGS(&mDsvHeap)));
 }
 
+// [FlushCommandQueue()]
+// GPUがコマンドを終了するまでCPUをスリープさせる．
 void D3DApp::FlushCommandQueue()
 {
-	// Advance the fence value to mark commands up to thie fence point
+	// Fence 値をインクリメントして，GPUがこのフェンス値まで処理させる
 	mCurrentFence++;
 
-	// Add an instructino to the command queue to set a new fence point. Because we are on the GPU timeline, the new fence point won't be set until the GPU finishes processing all the commands prior to this Signal().
+	// command queue に Signal() 命令を追加．mFence に mCurrentFence を書き込む
 	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
 
-	// Wait until the GPU has completed commands up to this fence point
+	// GPU の fence 値が指定の値に到達するまで待つ．
 	if (mFence->GetCompletedValue() < mCurrentFence)
 	{
 		HANDLE eventHandle = CreateEventExW(nullptr, (LPCWSTR)false, false, EVENT_ALL_ACCESS);
 
 		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));
 
-		// Wait until the GPU hits current fence event is fired
+		// GPU が fence 値に到達するまでスリープする．
 		WaitForSingleObject(eventHandle, INFINITE);
 		CloseHandle(eventHandle);
 	}
