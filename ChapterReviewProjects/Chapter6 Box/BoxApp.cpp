@@ -139,6 +139,28 @@ void BoxApp::OnResize()
 
 void BoxApp::Update(const GameTimer& gt)
 {
+    float x = mRadius * sinf(mPhi) * cos(mTheta);
+    float y = mRadius * sinf(mPhi) * sinf(mTheta);
+    float z = mRadius * cosf(mPhi);
+
+    XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
+    XMVECTOR target = XMVectorZero();
+    XMVECTOR up = XMVectorSet(0.0f, 1.0, 0.0, 0.0f);
+
+    XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
+    XMStoreFloat4x4(&mView, view);
+
+    XMMATRIX world = XMLoadFloat4x4(&mWorld);
+    XMMATRIX proj = XMLoadFloat4x4(&mProj);
+    XMMATRIX worldViewProj = world * view * proj;
+
+    ObjectConstants objConstants;
+    XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
+    mObjectCB->CopyDate(0, objConstants);
+}
+
+void BoxApp::Draw(const GameTimer& gt)
+{
 }
 
 
