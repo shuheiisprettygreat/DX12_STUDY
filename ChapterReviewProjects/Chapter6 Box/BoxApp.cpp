@@ -113,6 +113,8 @@ bool BoxApp::Initialize()
     if(!D3DApp::Initialize())
         return false;
 
+    ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
+
     BuildDescriptorHeaps();
     BuildConstantBuffers();
     BuildRootSignature();
@@ -120,6 +122,7 @@ bool BoxApp::Initialize()
     BuildBoxGeometry();
     BuildPSO();
 
+    // Reset() を呼び出すこと
     ThrowIfFailed(mCommandList->Close());
     ID3D12CommandList* commandLists[] = { mCommandList.Get() };
     mCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
@@ -161,8 +164,98 @@ void BoxApp::Update(const GameTimer& gt)
 
 void BoxApp::Draw(const GameTimer& gt)
 {
+
+    // GPU での実行が完了している場合にのみ Reset() できる．
+    ThrowIfFailed(mDirectCmdListAlloc->Reset());
+
+    // コマンドリストは ExecuteCommandLists() で GPU に送信された後に Reset() できる．
+    ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
+    
+    mCommandList->RSSetViewports(1, &mScreenViewport);
+    mCommandList->RSSetScissorRects(1, &mScissorRect);
+
+    // バックバッファをレンダーターゲットとして使用するために，リソースの状態を変更する．
+    mCommandList->ResourceBarrier(
+        1,
+        &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET)
+    );
+    
+    // バックバッファとデプスバッファをクリアする．
+    mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+    mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
+	
+    // レンダリングターゲットを指定する．
+    mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());
+
+    ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
+    mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+    mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+    
+    mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
+    mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
+    mCommandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
+
+    mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["box"].IndexCount, 1, 0, 0, 0);
+    
+    // レンダーターゲットからシェーダリソースへ
+    mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
+    // コマンドの記録は終了
+    ThrowIfFailed(mCommandList->Close());
+
+    // キューに追加して実行
+    ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+    mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+    // バックバッファとフロントバッファを Swap
+    ThrowIfFailed(mSwapChain->Present(0, 0));
+    mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
+    // wait until frame commands are complete. This waiting is inefficient.
+    FlushCommandQueue();
+
 }
 
+void BoxApp::OnMouseUp(WPARAM btnState, int x, int y)
+{
+    ReleaseCapture();
+}
+
+void BoxApp::OnMouseDown(WPARAM btnState, int x, int y)
+{
+    mLastMousePos.x = x;
+    mLastMousePos.y = y;
+
+    SetCapture(mhMainWnd);
+}
+
+void BoxApp::OnMouseMove(WPARAM btnState, int x, int y)
+{
+    if((btnState & MK_LBUTTON) != 0)
+    {
+        float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+        float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+
+        mTheta += dx;
+        mPhi += dy;
+
+        mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
+    }
+    else if((btnState & MK_RBUTTON) != 0)
+    {
+        float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
+        float dy = 0.05f * static_cast<float>(y - mLastMousePos.y);
+
+        mRadius += dx - dy;
+
+        mRadius = MathHelper::Clamp(mRadius, 3.f, 15.f);
+    }
+    
+    mLastMousePos.x = x;
+    mLastMousePos.y = y;
+}
 
 // [BuildDescriptorHeaps()]
 // CBV のための DescriptorHeap (mCbvHeap) を作成する．
@@ -374,7 +467,8 @@ void BoxApp::BuildPSO()
     psoDesc.NumRenderTargets = 1;
     psoDesc.RTVFormats[0] = mBackBufferFormat;
     psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
-    psoDesc.SampleDesc.Count = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+    psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
     psoDesc.DSVFormat = mDepthStencilFormat;
+    
     ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
 }

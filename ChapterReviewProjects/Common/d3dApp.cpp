@@ -588,7 +588,7 @@ void D3DApp::CreateRtvAndDsvDescriptorHeaps()
 }
 
 // [FlushCommandQueue()]
-// GPUがコマンドを終了するまでCPUをスリープさせる．
+// GPUがコマンドを終了するまでCPUをスリープさせる
 void D3DApp::FlushCommandQueue()
 {
 	// Fence 値をインクリメントして，GPUがこのフェンス値まで処理させる
@@ -598,18 +598,17 @@ void D3DApp::FlushCommandQueue()
 	ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
 
 	// GPU の fence 値が指定の値に到達するまで待つ．
-	if (mFence->GetCompletedValue() < mCurrentFence)
+	if(mFence->GetCompletedValue() < mCurrentFence)
 	{
-		HANDLE eventHandle = CreateEventExW(nullptr, (LPCWSTR)false, false, EVENT_ALL_ACCESS);
+		HANDLE eventHandle = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 
-		ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));
+        // Fire event when GPU hits current fence.  
+        ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));
 
-		// GPU が fence 値に到達するまでスリープする．
+        // Wait until the GPU hits current fence event is fired.
 		WaitForSingleObject(eventHandle, INFINITE);
-		CloseHandle(eventHandle);
+        CloseHandle(eventHandle);
 	}
-
-
 }
 
 // Getters here
